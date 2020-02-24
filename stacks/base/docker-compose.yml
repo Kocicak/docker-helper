@@ -1,0 +1,45 @@
+version: '3'
+
+services:
+
+    # localhost service that automatically proxy to docker containers
+  traefik:
+    image: traefik:v2.1
+    container_name: traefik
+    ports:
+      - "8080:8080"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - $PWD/traefik.yml:/etc/traefik/traefik.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  adminer:
+    build: ./dockerfiles/adminer
+    container_name: adminer
+    environment:
+      - ADMINER_PLUGINS=tables-filter dump-date
+    labels:
+      traefik.http.routers.adminer.rule: Host("adminer.docker.localhost")
+
+  mysql: # Shared DB container
+    image: mariadb:10.2
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    ports:
+      - "3316:3306"
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    labels:
+      traefik.http.routers.mailhog.rule: Host(`mailhog.docker.localhost`)
+      traefik.http.services.mailhog.loadbalancer.server.port: 8025
+
+networks:
+  default:
+    external:
+      name: dev

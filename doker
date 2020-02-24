@@ -1,0 +1,185 @@
+#!/bin/bash
+
+DIR_COMPOSE=~/.doker/stacks
+
+#=========================
+# start stacku
+# $1 - nazev stacku = adresare
+# $2 - jestli na pozadi ci nikoliv. prazdno = PWD a $1 = $2
+#=========================
+function start_service {
+	if [ -z "$2" ]; then
+		internal_start_service "$PWD" $1
+	else
+		internal_start_service "$DIR_COMPOSE/$1" $2
+	fi
+}
+
+#=========================
+# start stacku
+# $1 - adresar
+# $2 - jestli na pozadi ci nikoliv
+#=========================
+function internal_start_service {
+	local directory="$1"
+	local cmd="docker-compose -f docker-compose.yml"
+	if [ -f "$directory/docker-compose-dev.yml" ] ; then
+		cmd="$cmd -f docker-compose-dev.yml"
+	fi
+
+	if [ -f "$directory/docker-sync.yml" ] ; then
+		cmd="docker-sync start && $cmd"
+	fi
+	
+	cmd="$cmd up"
+	
+	if [ "$2" = true ]; then
+		cmd="$cmd -d"
+	fi
+
+	cd ${directory}
+	eval ${cmd}
+}
+
+#=========================
+# stop stacku
+# $1 - nazev stacku = adresare. prazdno = $PWD
+function stop_service {
+	if [ -z "$1" ]; then
+		internal_stop_service "$PWD"
+	else
+		internal_stop_service "$DIR_COMPOSE/$1"
+	fi
+}
+
+#=========================
+# zastavit stack
+# $1 nazev stacku = adresare
+#=========================
+function internal_stop_service {
+	local directory=$1
+	local cmd="docker-compose -f docker-compose.yml"
+	if [ -f "$directory/docker-compose-dev.yml" ] ; then
+		cmd="$cmd -f docker-compose-dev.yml"
+	fi
+	if [ -f "$directory/docker-sync.yml" ] ; then
+		cmd="docker-sync stop && $cmd"
+	fi
+	
+	cmd="$cmd stop"
+
+	cd ${directory}
+	eval ${cmd}
+}
+
+#=========================
+# aktualizovat image
+# pomoci pull nebo build
+# $1 nazev stacku = adresare
+#=========================
+function update_stack {
+	if [ -z "$1" ]; then
+		internal_update_stack "$PWD"
+	else
+		internal_update_stack "$DIR_COMPOSE/$1"
+	fi
+}
+
+#=========================
+# aktualizovat image z docker-compose.yml
+# $1 adresar adresare
+#=========================
+function internal_update_stack {
+	local directory=$1
+	cd ${directory}
+	docker-compose pull
+	docker-compose build --pull
+}
+
+#=========================
+# vyhledat bezici kontejner
+# pokud nenajde, exit 1.
+# $1 nazev nebo jeho cast
+#=========================
+function search_container {
+	local out="$(docker ps -f name=$1 -n 1 -q)"
+	echo ${out}
+}
+
+#=========================
+# validuje promennou
+# jestli ne, tak exit 1.
+# $1 - id kontejneru
+# $2 - nazev kontejneru
+#=========================
+function validate_container {
+	if [ -z "$1" ]; then
+		echo "zadnej kontejner s nazvem \"$2\" nebezi"
+		exit 1
+	fi
+}
+
+#=========================
+# najde nazev dle id
+# $1 id kontejneru
+#=========================
+function get_container_name {
+	echo "$(docker inspect $1 -f {{.Name}})"
+}
+
+#=========================
+# skocit bashem do kontejneru
+# $1 - nazev kontejneru
+# $2 - sh nebo bash
+#=========================
+function shell_into {
+	if [ -z "$1" ]; then
+		echo "Zadej aspon cast nazvu kontejneru"
+		exit 1
+	fi
+	local cid="$(search_container $1)"
+	validate_container "${cid}" "$1"
+	local name="$(docker inspect $cid -f {{.Name}})"
+	echo "jdu do kontejneru ${name}"
+	docker exec -it ${cid} $2
+}
+
+
+#==============================================================================
+
+case $1 in
+	"start")
+		start_service $2 true
+	;;
+	"startf")
+		start_service $2 false
+	;;
+	"stop")
+		stop_service $2
+	;;
+	"bash")
+		shell_into $2 bash
+	;;
+	"sh")
+		shell_into $2 sh
+	;;
+	"update")
+		update_stack $2
+	;;
+  "selfupdate")
+    cd ~/.doker
+    git pull
+  ;;
+	"h")
+	echo "parametry:"
+	echo "start <stack>                nastartuje docker-sync a docker-compose na pozadi"
+	echo "startf <stack>               nastartuje docker-sync a docker-compose na popredi"
+	echo "stop <stack>                 zastavi docker-sync a docker-compose"
+	echo "update <stack>               aktualizuje image ve stacku"
+	echo "bash <container_name>        prejde do shellu (bash) v kontejneru"
+	echo "sh <container_name>          prejde do shellu (sh) v kontejneru"
+	;;
+	*)
+	docker "$@"
+	;;
+esac
