@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DIR_COMPOSE=~/.doker/stacks
+DIR_COMPOSE=~/workspace/docker/stacks
 
 #=========================
 # start stacku
@@ -170,20 +170,56 @@ case $1 in
 		cd ~/.doker
 		git pull
 	;;
-	"composer")
-		docker run --rm -it -v "$PWD":/var/www/html -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini --network=dev registry.tessara.cz/php7.4-dev:latest php composer.phar "${@:2}"
+	"c")
+	docker run --rm -it \
+		  -v "$PWD":/var/www/html \
+		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+		  --user=$(id -u):$(id -g) \
+		  --volume $HOME/.composer:/.composer \
+		  --network=dev \
+		  registry.tessara.cz/php7.4-dev:latest \
+		  php composer.phar "${@:2}"
 	;;
-	"composerlocal")
-		docker run --rm -it -v "$PWD":/var/www/html -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini --network=dev -e COMPOSER=composer.local.json registry.tessara.cz/php7.4-dev:latest php composer.phar "${@:2}"
+	"cl")
+		docker run --rm -it \
+		  -v "$PWD":/var/www/html \
+		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+		  --user=$(id -u):$(id -g) \
+		  --volume $HOME/.composer:/.composer \
+		  --network=dev \
+		  -e COMPOSER=composer.local.json \
+		  registry.tessara.cz/php7.4-dev:latest \
+		  php composer.phar "${@:2}"
 	;;
-	"phpcs")
-		docker run --rm -it -v "$PWD":/var/www/html -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini --network=dev registry.tessara.cz/php7.4-dev:latest vendor/bin/phpcs --standard=vendor/movisio/nais-cs/config/ruleset.xml . -v
+	"cs")
+    if [ -z "$2" ]; then
+      dir="."
+    else
+      dir="nais_modules/$2"
+    fi
+		docker run --rm -it \
+		  -v "$PWD":/var/www/html \
+		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+		  --network=dev \
+		  registry.tessara.cz/php7.4-dev:latest \
+		  vendor/bin/phpcs --standard=vendor/movisio/nais-cs/config/ruleset.xml ${dir} -v
 	;;
 	"phinx")
-		docker run --rm -it --user=`id -u`:`id -g` -v "$PWD":/var/www/html -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini --network=dev registry.tessara.cz/php7.4-dev:latest php ./phinx.php "${@:2}"
+		docker run --rm -it \
+		  --user=$(id -u):$(id -g) \
+		  -v "$PWD":/var/www/html \
+		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+		  --network=dev registry.tessara.cz/php7.4-dev:latest \
+		  php ./phinx.php "${@:2}"
 	;;
 	"npm")
-		docker run --rm -it -v "$PWD":/var/www/html --network=dev registry.tessara.cz/npm-builder:latest npm "${@:2}"
+		docker run --rm -it \
+		  --user=$(id -u):$(id -g) \
+		  -v "$PWD":/var/www/html \
+		  --volume $HOME/.cache/npm:/cache/npm \
+		  --network=dev \
+		  registry.tessara.cz/npm-builder:latest \
+		  npm "${@:2}"
 	;;
 	
 	"h")
