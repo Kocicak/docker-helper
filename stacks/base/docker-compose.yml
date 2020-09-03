@@ -20,10 +20,10 @@ services:
     environment:
       - ADMINER_PLUGINS=tables-filter dump-date
     labels:
-      traefik.http.routers.adminer.rule: Host("adminer.docker.localhost")
+      traefik.http.routers.adminer.rule: Host("adminer.localtest.me")
 
   mysql: # Shared DB container
-    image: mariadb:10.2
+    image: mariadb:10.4
     container_name: mysql
     environment:
       - MYSQL_ROOT_PASSWORD
@@ -36,8 +36,29 @@ services:
     image: mailhog/mailhog:latest
     container_name: mailhog
     labels:
-      traefik.http.routers.mailhog.rule: Host(`mailhog.docker.localhost`)
+      traefik.http.routers.mailhog.rule: Host(`mailhog.localtest.me`)
       traefik.http.services.mailhog.loadbalancer.server.port: 8025
+
+  # lze sledovat trafic přes - redis-cli -p 6380 monitor (instalace redis-cli)
+  redis:
+    image: redis:alpine
+    container_name: redis
+    environment:
+      TZ: "Europe/Prague"
+
+  redisadmin:
+    image: erikdubbelboer/phpredisadmin:latest
+    container_name: redisadmin
+    environment:
+      - ADMIN_USER=admin
+      - ADMIN_PASS=admin
+      - REDIS_1_HOST=redis
+      - REDIS_1_PORT=6379
+    links:
+      - redis
+    labels:
+      traefik.http.routers.phpredisadmin.rule: Host("redisadmin.localtest.me")
+
 
 networks:
   default:
