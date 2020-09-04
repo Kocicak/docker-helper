@@ -144,6 +144,70 @@ function shell_into {
 	docker exec -it ${cid} $2
 }
 
+#=========================
+# Pustit composer prikaz
+# $1 - bool pouzit composer.local.json?
+#=========================
+function composer {
+  composerFile="composer.json"
+  if [ "$1" = true ]; then
+    composerFile="composer.local.json"
+  fi
+
+  docker run --rm -it \
+		  -v "$PWD":/var/www/html \
+		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+		  --user=$(id -u):$(id -g) \
+		  -e COMPOSER=${composerFile} \
+		  --volume $HOME/.composer:/.composer \
+		  --network=dev \
+		  registry.tessara.cz/php7.4-dev:latest \
+		  php composer.phar "${@:2}"
+}
+
+#=========================
+# pusti code sniffer
+# $1 - nazev nais modulu v nais_modules
+#=========================
+function code_sniffer {
+  if [ -z "$1" ]; then
+      dir="."
+    else
+      dir="nais_modules/$1"
+    fi
+		docker run --rm -it \
+		  -v "$PWD":/var/www/html \
+		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+		  --network=dev \
+		  registry.tessara.cz/php7.4-dev:latest \
+		  vendor/bin/phpcs --standard=vendor/movisio/nais-cs/config/ruleset.xml ${dir} -v
+}
+
+#=========================
+# pusti phinx
+#=========================
+function phinx {
+  docker run --rm -it \
+		  --user=$(id -u):$(id -g) \
+		  -v "$PWD":/var/www/html \
+		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+		  --network=dev registry.tessara.cz/php7.4-dev:latest \
+		  php ./phinx.php "${@}"
+}
+
+#=========================
+# pusti npm
+#=========================
+function npm {
+  docker run --rm -it \
+		  --user=$(id -u):$(id -g) \
+		  -v "$PWD":/var/www/html \
+		  --volume $HOME/.cache/npm:/cache/npm \
+		  --network=dev \
+		  registry.tessara.cz/npm-builder:latest \
+		  npm "$@"
+}
+
 
 #==============================================================================
 
@@ -171,55 +235,19 @@ case $1 in
 		git pull
 	;;
 	"c")
-	docker run --rm -it \
-		  -v "$PWD":/var/www/html \
-		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-		  --user=$(id -u):$(id -g) \
-		  --volume $HOME/.composer:/.composer \
-		  --network=dev \
-		  registry.tessara.cz/php7.4-dev:latest \
-		  php composer.phar "${@:2}"
+	  composer false "${@:2}"
 	;;
 	"cl")
-		docker run --rm -it \
-		  -v "$PWD":/var/www/html \
-		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-		  --user=$(id -u):$(id -g) \
-		  --volume $HOME/.composer:/.composer \
-		  --network=dev \
-		  -e COMPOSER=composer.local.json \
-		  registry.tessara.cz/php7.4-dev:latest \
-		  php composer.phar "${@:2}"
+		composer true "${@:2}"
 	;;
 	"cs")
-    if [ -z "$2" ]; then
-      dir="."
-    else
-      dir="nais_modules/$2"
-    fi
-		docker run --rm -it \
-		  -v "$PWD":/var/www/html \
-		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-		  --network=dev \
-		  registry.tessara.cz/php7.4-dev:latest \
-		  vendor/bin/phpcs --standard=vendor/movisio/nais-cs/config/ruleset.xml ${dir} -v
+    code_sniffer $2
 	;;
 	"phinx")
-		docker run --rm -it \
-		  --user=$(id -u):$(id -g) \
-		  -v "$PWD":/var/www/html \
-		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-		  --network=dev registry.tessara.cz/php7.4-dev:latest \
-		  php ./phinx.php "${@:2}"
+		phinx "${@:2}"
 	;;
 	"npm")
-		docker run --rm -it \
-		  --user=$(id -u):$(id -g) \
-		  -v "$PWD":/var/www/html \
-		  --volume $HOME/.cache/npm:/cache/npm \
-		  --network=dev \
-		  registry.tessara.cz/npm-builder:latest \
-		  npm "${@:2}"
+	  npm "${@:2}"
 	;;
 	
 	"h")
@@ -230,6 +258,11 @@ case $1 in
 	echo "update <stack>               aktualizuje image ve stacku"
 	echo "bash <container_name>        prejde do shellu (bash) v kontejneru"
 	echo "sh <container_name>          prejde do shellu (sh) v kontejneru"
+	echo "c <composer_commands>        spusti composer <composer_commands>, napr 'doker c require movisio/nais-core'"
+	echo "cl <composer_commands>       jako c, ale v ENV bude COMPOSER=composer.local.json"
+	echo "cs <nais_modul>              spusti phpcs bud v aktualnim adresari  nebo v adresari nais_modules/<nais_modul>"
+	echo "phinx <command>              spusti phinx, napr 'doker phinx migrate' nebo 'doker phinx create Migration Module'"
+	echo "npm <command>                spusti NPM, napr. 'doker npm install' nebo 'doker npm run dev'"
 	;;
 	*)
 	docker "$@"
