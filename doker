@@ -192,7 +192,7 @@ function phinx {
 		  -v "$PWD":/var/www/html \
 		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 		  --network=dev registry.tessara.cz/php7.4-dev:latest \
-		  php ./phinx.php "${@}"
+		  php ./phinx.php "$@"
 }
 
 #=========================
@@ -201,10 +201,10 @@ function phinx {
 function npm {
   docker run --rm -it \
 		  --user=$(id -u):$(id -g) \
-		  -v "$PWD":/var/www/html \
-		  --volume $HOME/.cache/npm:/cache/npm \
+		  -v "$PWD":/app \
+		  -w="/app" \
 		  --network=dev \
-		  registry.tessara.cz/npm-builder:latest \
+		  node:latest \
 		  npm "$@"
 }
 
@@ -235,19 +235,19 @@ case $1 in
 		git pull
 	;;
 	"c")
-	  composer false "${@:2}"
+		composer false "${@:2}"
 	;;
 	"cl")
 		composer true "${@:2}"
 	;;
 	"cs")
-    code_sniffer $2
+		code_sniffer $2
 	;;
 	"phinx")
 		phinx "${@:2}"
 	;;
 	"npm")
-	  npm "${@:2}"
+		npm "${@:2}"
 	;;
 	
 	"h")
