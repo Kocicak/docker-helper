@@ -103,7 +103,7 @@ function internal_update_stack {
 # $1 nazev nebo jeho cast
 #=========================
 function search_container {
-	local out="$(docker ps -f name=$1 -n 1 -q)"
+	local out="$(docker ps -f name=$1 -q)"
 	echo ${out}
 }
 
@@ -156,7 +156,7 @@ function shell_into {
 }
 
 #=========================
-# Pustit composer prikaz
+# Pustit composer prikaz na standardnim php4 kontejneru
 # $1 - bool pouzit composer.local.json?
 #=========================
 function composer {
@@ -177,6 +177,47 @@ function composer {
 }
 
 #=========================
+# Pustit composer prikaz v oficialnim compose imagi
+# $1 - bool pouzit composer.local.json?
+#=========================
+function composer_ofc {
+  composerFile="composer.json"
+  if [ "$1" = true ]; then
+    composerFile="composer.local.json"
+  fi
+
+  docker run --rm -it \
+		  -v "$PWD":/app \
+		  --user=$(id -u):$(id -g) \
+		  -e COMPOSER=${composerFile} \
+		  --volume $HOME/.composer:/.composer \
+		  --network=dev \
+		  composer:latest \
+		  composer "${@:2}"
+}
+
+#=========================
+# Pustit composer prikaz, ale na lokalnim kontejneru dle jmena z docker-compose
+# $1 - bool pouzit composer.local.json?
+#=========================
+function compose_compose {
+  composerFile="composer.json"
+  if [ "$1" = true ]; then
+    composerFile="composer.local.json"
+  fi
+
+  docker-compose run --rm \
+		  -v "$PWD":/var/www/html \
+		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+		  -v $HOME/.composer:/.composer \
+		  --user=$(id -u):$(id -g) \
+		  -e COMPOSER=${composerFile} \
+		  --use-aliases \
+		  "$2" \
+		  php composer.phar "${@:3}"
+}
+
+#=========================
 # pusti code sniffer
 # $1 - nazev nais modulu v nais_modules
 #=========================
@@ -184,7 +225,7 @@ function code_sniffer {
   if [ -z "$1" ]; then
       dir="."
     else
-      dir="nais_modules/$1"
+      dir="$1"
     fi
 		docker run --rm -it \
 		  -v "$PWD":/var/www/html \
@@ -212,10 +253,11 @@ function phinx {
 function npm {
   docker run --rm -it \
 		  --user=$(id -u):$(id -g) \
+		  -v $HOME/.npm:/cache/npm \
 		  -v "$PWD":/app \
 		  -w="/app" \
 		  --network=dev \
-		  node:latest \
+		  registry.tessara.cz/npm-builder:latest \
 		  npm "$@"
 }
 
@@ -276,8 +318,17 @@ case $1 in
 	"c")
 		composer false "${@:2}"
 	;;
+	"co")
+		composer_ofc false "${@:2}"
+	;;
 	"cl")
 		composer true "${@:2}"
+	;;
+	"cc")
+		compose_compose false "${@:2}" # pouziti 'cc <nazev service z docker-compose.yml> <prikaz composeru>', pr. "doker cc rmm_php update"
+	;;
+	"ccl")
+		compose_compose true "${@:2}"
 	;;
 	"cs")
 		code_sniffer $2
@@ -294,7 +345,6 @@ case $1 in
   "dep")
     deployer "${@:2}"
   ;;
-	
 	"h")
 	echo "parametry:"
 	echo "start <stack>                nastartuje docker-sync a docker-compose na pozadi"
@@ -305,6 +355,8 @@ case $1 in
 	echo "sh <container_name>          prejde do shellu (sh) v kontejneru"
 	echo "c <composer_commands>        spusti composer <composer_commands>, napr 'doker c require movisio/nais-core'"
 	echo "cl <composer_commands>       jako c, ale v ENV bude COMPOSER=composer.local.json"
+	echo "cc <service> <composer_cmd>  jako c, ale pusti to dle docker-compose.yml"
+	echo "ccl <service> <composer_cmd> jako cl, ale pusti to dle docker-compose.yml"
 	echo "cs <nais_modul>              spusti phpcs bud v aktualnim adresari  nebo v adresari nais_modules/<nais_modul>"
 	echo "phinx <command>              spusti phinx, napr 'doker phinx migrate' nebo 'doker phinx create Migration Module'"
 	echo "npm <command>                spusti NPM, napr. 'doker npm install' nebo 'doker npm run dev'"
