@@ -18,14 +18,16 @@ services:
     build: ./dockerfiles/adminer
     container_name: adminer
     environment:
+      - TZ=Europe/Prague
       - ADMINER_PLUGINS=tables-filter dump-date
     labels:
       traefik.http.routers.adminer.rule: Host("adminer.localtest.me")
 
   mysql: # Shared DB container
-    image: mariadb:10.4
+    image: mariadb:10.5
     container_name: mysql
     environment:
+      - TZ=Europe/Prague
       - MYSQL_ROOT_PASSWORD
     volumes:
       - ./mysql-data:/var/lib/mysql
@@ -35,6 +37,8 @@ services:
   mailhog:
     image: mailhog/mailhog:latest
     container_name: mailhog
+    environment:
+      - TZ=Europe/Prague
     labels:
       traefik.http.routers.mailhog.rule: Host(`mailhog.localtest.me`)
       traefik.http.services.mailhog.loadbalancer.server.port: 8025
@@ -44,7 +48,7 @@ services:
     image: redis:alpine
     container_name: redis
     environment:
-      TZ: "Europe/Prague"
+      - TZ=Europe/Prague
 
   redisadmin:
     image: erikdubbelboer/phpredisadmin:latest
