@@ -262,6 +262,20 @@ function npm {
 }
 
 #=========================
+# pusti gulp
+#=========================
+function gulp {
+  docker run --rm -it \
+		  --user=$(id -u):$(id -g) \
+		  -v $HOME/.npm:/cache/npm \
+		  -v "$PWD":/app \
+		  -w="/app" \
+		  --network=dev \
+		  registry.tessara.cz/npm-builder-gulp:latest \
+		  gulp "$@"
+}
+
+#=========================
 # zbuildi image
 #=========================
 function build {
@@ -339,6 +353,9 @@ case $1 in
 	"npm")
 		npm "${@:2}"
 	;;
+	"gulp")
+		gulp "${@:2}"
+	;;
   "build")
     build $2
   ;;
@@ -360,6 +377,7 @@ case $1 in
 	echo "cs <nais_modul>              spusti phpcs bud v aktualnim adresari  nebo v adresari nais_modules/<nais_modul>"
 	echo "phinx <command>              spusti phinx, napr 'doker phinx migrate' nebo 'doker phinx create Migration Module'"
 	echo "npm <command>                spusti NPM, napr. 'doker npm install' nebo 'doker npm run dev'"
+	echo "gulp <command>               spusti gulp, napr. 'doker gulp --version'"
 	;;
 	*)
 	docker "$@"
