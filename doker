@@ -23,8 +23,8 @@ function start_service {
 #=========================
 function internal_start_service {
 	local directory="$1"
-	local cmd="docker-compose -f docker-compose.yml"
-	if [ -f "$directory/docker-compose-dev.yml" ] ; then
+	local cmd="docker compose -f docker-compose.yml"
+	if [ -f "$directory/dockercompose-dev.yml" ] ; then
 		cmd="$cmd -f docker-compose-dev.yml"
 	fi
 
@@ -172,8 +172,38 @@ function composer {
 		  -e COMPOSER=${composerFile} \
 		  --volume $HOME/.composer:/.composer \
 		  --network=dev \
-		  registry.tessara.cz/php7.4-dev:latest \
+		  registry.tessara.cz/php7.4-kafka-dev:latest \
 		  php composer.phar "${@:2}"
+}
+#=========================
+# Pustit bash nebo sh v kontejneru dle docker-compose
+# $1 - bool pouzit composer.local.json?
+# $2 - nazev kontejneru
+# $3 - bash nebo sh
+#=========================
+function composer_shell {
+  composerFile="composer.json"
+  if [ "$1" = true ]; then
+    composerFile="composer.local.json"
+  fi
+
+  docker-compose exec $2 $3
+}
+
+
+#=========================
+# priakz v kontejneru dle docker-compose
+# $1 - bool pouzit composer.local.json?
+# $2 - nazev kontejneru
+# $3 a dal - prikaz
+#=========================
+function composer_exec {
+  composerFile="composer.json"
+  if [ "$1" = true ]; then
+    composerFile="composer.local.json"
+  fi
+
+  docker-compose exec $2 ${@:3}
 }
 
 #=========================
@@ -259,6 +289,18 @@ function npm {
 		  --network=dev \
 		  registry.tessara.cz/npm-builder:latest \
 		  npm "$@"
+}
+
+#=========================
+# pusti php
+#=========================
+function php {
+  docker run --rm -it \
+  		  --user=$(id -u):$(id -g) \
+  		  -v "$PWD":/var/www/html \
+  		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+  		  --network=dev registry.tessara.cz/php7.4-dev:latest \
+  		  php "$@"
 }
 
 #=========================
@@ -362,6 +404,27 @@ case $1 in
   "dep")
     deployer "${@:2}"
   ;;
+  "php")
+    php "${@:2}"
+  ;;
+  "cb")
+    composer_shell false $2 bash
+  ;;
+  "csh")
+    composer_shell false $2 sh
+  ;;
+  "clb")
+    composer_shell true $2 bash
+  ;;
+  "clsh")
+    composer_shell true $2 sh
+  ;;
+  "ce")
+    composer_exec false "${@:2}"
+  ;;
+  "cle")
+    composer_exec true "${@:2}"
+  ;;
 	"h")
 	echo "parametry:"
 	echo "start <stack>                nastartuje docker-sync a docker-compose na pozadi"
@@ -378,6 +441,12 @@ case $1 in
 	echo "phinx <command>              spusti phinx, napr 'doker phinx migrate' nebo 'doker phinx create Migration Module'"
 	echo "npm <command>                spusti NPM, napr. 'doker npm install' nebo 'doker npm run dev'"
 	echo "gulp <command>               spusti gulp, napr. 'doker gulp --version'"
+	echo "cb <command>                 prejde do shellu (bash) podle docker-compose.yml"
+  echo "csh <command>                prejde do shellu (sh) podle docker-compose.yml"
+	echo "clb <command>                prejde do shellu (bash) podle docker-compose.local.yml"
+	echo "clsh <command>               prejde do shellu (sh) podle docker-compose.local.yml"
+  echo "ce <command>                 pusti prikaz v kontejneru dle docker-compose.yml"
+	echo "cle <command>                pusti prikaz v kontejneru dle docker-compose.local.yml"
 	;;
 	*)
 	docker "$@"

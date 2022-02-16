@@ -1,4 +1,4 @@
-FROM php:cli-alpine
+FROM php:7.4-cli-alpine
 
 ENV DEPLOYER_VERSION=6.8.0
 

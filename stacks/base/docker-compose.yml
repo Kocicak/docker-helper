@@ -1,4 +1,4 @@
-version: '3'
+version: '3.9'
 
 services:
 
@@ -63,8 +63,6 @@ services:
     labels:
       traefik.http.routers.phpredisadmin.rule: Host("redisadmin.localhost")
 
-
 networks:
   default:
-    external:
-      name: dev
+    name: dev
