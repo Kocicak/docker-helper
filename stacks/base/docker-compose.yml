@@ -24,7 +24,7 @@ services:
       traefik.http.routers.adminer.rule: Host("adminer.localhost")
 
   mysql: # Shared DB container
-    image: mariadb:10.6
+    image: mariadb:10.7
     container_name: mysql
     environment:
       - TZ=Europe/Prague

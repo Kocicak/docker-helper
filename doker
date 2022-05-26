@@ -59,7 +59,7 @@ function stop_service {
 #=========================
 function internal_stop_service {
 	local directory=$1
-	local cmd="docker-compose -f docker-compose.yml"
+	local cmd="docker compose -f docker-compose.yml"
 	if [ -f "$directory/docker-compose-dev.yml" ] ; then
 		cmd="$cmd -f docker-compose-dev.yml"
 	fi
@@ -93,8 +93,8 @@ function update_stack {
 function internal_update_stack {
 	local directory=$1
 	cd ${directory}
-	docker-compose pull
-	docker-compose build --pull
+	docker compose pull
+	docker compose build --pull
 }
 
 #=========================
@@ -187,7 +187,7 @@ function composer_shell {
     composerFile="composer.local.json"
   fi
 
-  docker-compose exec $2 $3
+  docker compose exec $2 $3
 }
 
 
@@ -203,7 +203,7 @@ function composer_exec {
     composerFile="composer.local.json"
   fi
 
-  docker-compose exec $2 ${@:3}
+  docker compose exec $2 ${@:3}
 }
 
 #=========================
@@ -236,7 +236,7 @@ function compose_compose {
     composerFile="composer.local.json"
   fi
 
-  docker-compose run --rm \
+  docker compose run --rm \
 		  -v "$PWD":/var/www/html \
 		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 		  -v $HOME/.composer:/.composer \
@@ -287,7 +287,7 @@ function npm {
 		  -v "$PWD":/app \
 		  -w="/app" \
 		  --network=dev \
-		  registry.tessara.cz/npm-builder:latest \
+		  node:16 \
 		  npm "$@"
 }
 
@@ -427,9 +427,9 @@ case $1 in
   ;;
 	"h")
 	echo "parametry:"
-	echo "start <stack>                nastartuje docker-sync a docker-compose na pozadi"
-	echo "startf <stack>               nastartuje docker-sync a docker-compose na popredi"
-	echo "stop <stack>                 zastavi docker-sync a docker-compose"
+	echo "start <stack>                nastartuje docker compose na pozadi"
+	echo "startf <stack>               nastartuje docker compose na popredi"
+	echo "stop <stack>                 zastavi docker compose"
 	echo "update <stack>               aktualizuje image ve stacku"
 	echo "bash <container_name>        prejde do shellu (bash) v kontejneru"
 	echo "sh <container_name>          prejde do shellu (sh) v kontejneru"

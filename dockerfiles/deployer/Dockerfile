@@ -1,10 +1,8 @@
-FROM php:7.4-cli-alpine
+FROM php:7.4-cli
 
 ENV DEPLOYER_VERSION=6.8.0
 
-RUN apk update --no-cache \
-    && apk add --no-cache \
-        openssh-client git rsync
+RUN apt-get update && apt-get install -y openssh-client git rsync
 
 RUN curl -L https://deployer.org/releases/v$DEPLOYER_VERSION/deployer.phar > /usr/local/bin/deployer \
     && chmod +x /usr/local/bin/deployer
