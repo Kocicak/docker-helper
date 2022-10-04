@@ -4,7 +4,7 @@ services:
 
     # localhost service that automatically proxy to docker containers
   traefik:
-    image: traefik:v2.1
+    image: traefik:v2.9
     container_name: traefik
     ports:
       - "8080:8080"
@@ -15,16 +15,18 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   adminer:
-    build: ./dockerfiles/adminer
+    image: adminer:latest
+#    build: ./dockerfiles/adminer
     container_name: adminer
     environment:
       - TZ=Europe/Prague
       - ADMINER_PLUGINS=tables-filter dump-date
+      - ADMINER_DEFAULT_SERVER=mysql
     labels:
       traefik.http.routers.adminer.rule: Host("adminer.localhost")
 
   mysql: # Shared DB container
-    image: mariadb:10.7
+    image: mariadb:10.9
     container_name: mysql
     environment:
       - TZ=Europe/Prague

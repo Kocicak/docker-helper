@@ -156,81 +156,31 @@ function shell_into {
 }
 
 #=========================
-# Pustit composer prikaz na standardnim php4 kontejneru
-# $1 - bool pouzit composer.local.json?
-#=========================
-function composer {
-  composerFile="composer.json"
-  if [ "$1" = true ]; then
-    composerFile="composer.local.json"
-  fi
-
-  docker run --rm -it \
-		  -v "$PWD":/var/www/html \
-		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-		  --user=$(id -u):$(id -g) \
-		  -e COMPOSER=${composerFile} \
-		  --volume $HOME/.composer:/.composer \
-		  --network=dev \
-		  registry.tessara.cz/php7.4-kafka-dev:latest \
-		  php composer.phar "${@:2}"
-}
-#=========================
 # Pustit bash nebo sh v kontejneru dle docker-compose
-# $1 - bool pouzit composer.local.json?
-# $2 - nazev kontejneru
-# $3 - bash nebo sh
+# $1 - nazev kontejneru
+# $2 - bash nebo sh
 #=========================
-function composer_shell {
-  composerFile="composer.json"
-  if [ "$1" = true ]; then
-    composerFile="composer.local.json"
-  fi
-
-  docker compose exec $2 $3
+function compose_shell {
+  docker compose exec $1 $2
 }
 
 
 #=========================
 # priakz v kontejneru dle docker-compose
-# $1 - bool pouzit composer.local.json?
-# $2 - nazev kontejneru
-# $3 a dal - prikaz
+# $1 - nazev kontejneru
+# $2 a dal - prikaz
 #=========================
-function composer_exec {
-  composerFile="composer.json"
-  if [ "$1" = true ]; then
-    composerFile="composer.local.json"
-  fi
-
-  docker compose exec $2 ${@:3}
-}
-
-#=========================
-# Pustit composer prikaz v oficialnim compose imagi
-# $1 - bool pouzit composer.local.json?
-#=========================
-function composer_ofc {
-  composerFile="composer.json"
-  if [ "$1" = true ]; then
-    composerFile="composer.local.json"
-  fi
-
-  docker run --rm -it \
-		  -v "$PWD":/app \
-		  --user=$(id -u):$(id -g) \
-		  -e COMPOSER=${composerFile} \
-		  --volume $HOME/.composer:/.composer \
-		  --network=dev \
-		  composer:latest \
-		  composer "${@:2}"
+function compose_exec {
+  docker compose exec \
+    --user=$(id -u):$(id -g) \
+    $1 ${@:2}
 }
 
 #=========================
 # Pustit composer prikaz, ale na lokalnim kontejneru dle jmena z docker-compose
 # $1 - bool pouzit composer.local.json?
 #=========================
-function compose_compose {
+function compose_composer {
   composerFile="composer.json"
   if [ "$1" = true ]; then
     composerFile="composer.local.json"
@@ -248,33 +198,31 @@ function compose_compose {
 }
 
 #=========================
-# pusti code sniffer
-# $1 - nazev nais modulu v nais_modules
+# pusti code sniffer na kontejneru z docker-compose.yml
+# #1 - nazev service z docker-compose.yml
+# $2 - nazev nais modulu v nais_modules
 #=========================
-function code_sniffer {
-  if [ -z "$1" ]; then
+function compose_code_sniffer {
+  if [ -z "$2" ]; then
       dir="."
     else
-      dir="$1"
+      dir="$2"
     fi
-		docker run --rm -it \
-		  -v "$PWD":/var/www/html \
+		docker-compose run --rm -it \
 		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-		  --network=dev \
-		  registry.tessara.cz/php7.4-dev:latest \
+		  "$1" \
 		  vendor/bin/phpcs --standard=vendor/movisio/nais-cs/config/ruleset.xml ${dir} -v
 }
 
 #=========================
-# pusti phinx
+# pusti phinx jako compose
+# $1 - nazev service z docker-compose.yml
 #=========================
-function phinx {
-  docker run --rm -it \
-		  --user=$(id -u):$(id -g) \
-		  -v "$PWD":/var/www/html \
-		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-		  --network=dev registry.tessara.cz/php7.4-dev:latest \
-		  php ./phinx.php "$@"
+function phinx_compose {
+  docker-compose run --rm -it \
+      --user=$(id -u):$(id -g) \
+		  "$1" \
+		  php ./phinx.php "${@:2}"
 }
 
 #=========================
@@ -289,32 +237,6 @@ function npm {
 		  --network=dev \
 		  node:16 \
 		  npm "$@"
-}
-
-#=========================
-# pusti php
-#=========================
-function php {
-  docker run --rm -it \
-  		  --user=$(id -u):$(id -g) \
-  		  -v "$PWD":/var/www/html \
-  		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-  		  --network=dev registry.tessara.cz/php7.4-dev:latest \
-  		  php "$@"
-}
-
-#=========================
-# pusti gulp
-#=========================
-function gulp {
-  docker run --rm -it \
-		  --user=$(id -u):$(id -g) \
-		  -v $HOME/.npm:/cache/npm \
-		  -v "$PWD":/app \
-		  -w="/app" \
-		  --network=dev \
-		  registry.tessara.cz/npm-builder-gulp:latest \
-		  gulp "$@"
 }
 
 #=========================
@@ -367,36 +289,20 @@ case $1 in
 	"update")
 		update_stack $2
 	;;
-	"selfupdate")
-		cd ~/.doker
-		git pull
-	;;
 	"c")
-		composer false "${@:2}"
-	;;
-	"co")
-		composer_ofc false "${@:2}"
+		compose_composer false "${@:2}" # pouziti 'cc <nazev service z docker-compose.yml> <prikaz composeru>', pr. "doker cc rmm_php update"
 	;;
 	"cl")
-		composer true "${@:2}"
-	;;
-	"cc")
-		compose_compose false "${@:2}" # pouziti 'cc <nazev service z docker-compose.yml> <prikaz composeru>', pr. "doker cc rmm_php update"
-	;;
-	"ccl")
-		compose_compose true "${@:2}"
+		compose_composer true "${@:2}"
 	;;
 	"cs")
-		code_sniffer $2
+		compose_code_sniffer ${@:2}
 	;;
 	"phinx")
-		phinx "${@:2}"
+		phinx_compose "${@:2}"
 	;;
 	"npm")
 		npm "${@:2}"
-	;;
-	"gulp")
-		gulp "${@:2}"
 	;;
   "build")
     build $2
@@ -404,49 +310,31 @@ case $1 in
   "dep")
     deployer "${@:2}"
   ;;
-  "php")
-    php "${@:2}"
-  ;;
   "cb")
-    composer_shell false $2 bash
+    compose_shell $2 bash
   ;;
   "csh")
-    composer_shell false $2 sh
+    compose_shell $2 sh
   ;;
-  "clb")
-    composer_shell true $2 bash
-  ;;
-  "clsh")
-    composer_shell true $2 sh
-  ;;
-  "ce")
-    composer_exec false "${@:2}"
-  ;;
-  "cle")
-    composer_exec true "${@:2}"
+  "e")
+    compose_exec "${@:2}"
   ;;
 	"h")
 	echo "parametry:"
-	echo "start <stack>                nastartuje docker compose na pozadi"
-	echo "startf <stack>               nastartuje docker compose na popredi"
-	echo "stop <stack>                 zastavi docker compose"
-	echo "update <stack>               aktualizuje image ve stacku"
-	echo "bash <container_name>        prejde do shellu (bash) v kontejneru"
-	echo "sh <container_name>          prejde do shellu (sh) v kontejneru"
-	echo "c <composer_commands>        spusti composer <composer_commands>, napr 'doker c require movisio/nais-core'"
-	echo "cl <composer_commands>       jako c, ale v ENV bude COMPOSER=composer.local.json"
-	echo "cc <service> <composer_cmd>  jako c, ale pusti to dle docker-compose.yml"
-	echo "ccl <service> <composer_cmd> jako cl, ale pusti to dle docker-compose.yml"
-	echo "cs <nais_modul>              spusti phpcs bud v aktualnim adresari  nebo v adresari nais_modules/<nais_modul>"
-	echo "phinx <command>              spusti phinx, napr 'doker phinx migrate' nebo 'doker phinx create Migration Module'"
-	echo "npm <command>                spusti NPM, napr. 'doker npm install' nebo 'doker npm run dev'"
-	echo "gulp <command>               spusti gulp, napr. 'doker gulp --version'"
-	echo "cb <command>                 prejde do shellu (bash) podle docker-compose.yml"
-  echo "csh <command>                prejde do shellu (sh) podle docker-compose.yml"
-	echo "clb <command>                prejde do shellu (bash) podle docker-compose.local.yml"
-	echo "clsh <command>               prejde do shellu (sh) podle docker-compose.local.yml"
-  echo "ce <command>                 pusti prikaz v kontejneru dle docker-compose.yml"
-	echo "cle <command>                pusti prikaz v kontejneru dle docker-compose.local.yml"
+	echo "start <stack>               nastartuje docker compose na pozadi"
+	echo "startf <stack>              nastartuje docker compose na popredi"
+	echo "stop <stack>                zastavi docker compose"
+	echo "update <stack>              aktualizuje image ve stacku"
+	echo "bash <container_name>       prejde do shellu (bash) v kontejneru"
+	echo "sh <container_name>         prejde do shellu (sh) v kontejneru"
+	echo "c <service> <cmd>           spusti php composer.phar <cmd>, composer.json"
+	echo "cl <service> <cmd>          spusti php composer.phar <cmd>, composer.local.json"
+	echo "cs <service> <adresar>      spusti phpcs bud v aktualnim adresari  nebo v <adresar>, kontejner dle docker-compose.yml."
+	echo "phinx <service> <command>   spusti phinx v kontejneru dle docker-compose.yml, napr 'doker phinx migrate' nebo 'doker phinx create Migration Module'"
+	echo "npm <command>               spusti NPM, napr. 'doker npm install' nebo 'doker npm run dev'"
+	echo "cb <command>                prejde do shellu (bash) podle docker-compose.yml"
+  echo "csh <command>               prejde do shellu (sh) podle docker-compose.yml"
+  echo "e <command>                 pusti prikaz v kontejneru dle docker-compose.yml"
 	;;
 	*)
 	docker "$@"
