@@ -1,9 +1,7 @@
 version: '3.9'
 
 services:
-
-    # localhost service that automatically proxy to docker containers
-  traefik:
+  traefik: # localhost service that automatically proxy to docker containers
     image: traefik:v2.9
     container_name: traefik
     ports:
@@ -20,13 +18,26 @@ services:
     container_name: adminer
     environment:
       - TZ=Europe/Prague
-      - ADMINER_PLUGINS=tables-filter dump-date
+      - ADMINER_PLUGINS=dump-date edit-foreign edit-calendar edit-textarea enum-option json-column display-foreign-key-name FasterTablesFilter restore-menu-scroll
       - ADMINER_DEFAULT_SERVER=mysql
+    volumes:
+      # jQuery
+      - ./adminer/jquery:/var/www/html/plugins/jquery
+      # plugins to enable
+      - ./adminer/FasterTablesFilter.php:/var/www/html/plugins/FasterTablesFilter.php
+      - ./adminer/floatThead.php:/var/www/html/plugins/floatThead.php
+      - ./adminer/display-foreign-key-name.php:/var/www/html/plugins/display-foreign-key-name.php
+      - ./adminer/edit-calendar.php:/var/www/html/plugins/edit-calendar.php
+      - ./adminer/restore-menu-scroll.php:/var/www/html/plugins/restore-menu-scroll.php
+      # float thead wrapper, already enabled
+      - ./adminer/AdminerFloatTheadWrapper.php:/var/www/html/plugins-enabled/AdminerFloatTheadWrapper.php
+      # custom style
+      - ./adminer/adminer.css:/var/www/html/adminer.css
     labels:
       traefik.http.routers.adminer.rule: Host("adminer.localhost")
 
   mysql: # Shared DB container
-    image: mariadb:10.9
+    image: mariadb:10.10
     container_name: mysql
     environment:
       - TZ=Europe/Prague
@@ -51,6 +62,8 @@ services:
     container_name: redis
     environment:
       - TZ=Europe/Prague
+    ports:
+      - "6379:6379"
 
   redisadmin:
     image: erikdubbelboer/phpredisadmin:latest

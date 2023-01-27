@@ -1,0 +1,41 @@
+html {
+    height: 100%;
+    width: 100%;
+}
+body {
+    min-height: 100%;
+    min-width: 100%;
+    position: relative;
+}
+
+#menu {
+    bottom: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-bottom: 0;
+    margin-top: 1em;
+}
+
+#menu > h1 {
+    background-color: #dadd1b;
+    color:black;
+    position: sticky;
+    top: 0;
+}
+
+#menu > h1:before {
+    content: 'LOCAL';
+}
+
+
+#content {
+    margin-top: 0;
+    padding-bottom: 0;
+    padding-right: 0;
+    padding-top: 3em;
+
+}
+
+.footer {
+    margin-right: 0;
+}

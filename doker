@@ -193,8 +193,8 @@ function compose_composer {
 		  --user=$(id -u):$(id -g) \
 		  -e COMPOSER=${composerFile} \
 		  --use-aliases \
-		  "$2" \
-		  php composer.phar "${@:3}"
+		  php \
+		  php composer.phar "${@:2}"
 }
 
 #=========================
@@ -203,14 +203,14 @@ function compose_composer {
 # $2 - nazev nais modulu v nais_modules
 #=========================
 function compose_code_sniffer {
-  if [ -z "$2" ]; then
+  if [ -z "$1" ]; then
       dir="."
     else
-      dir="$2"
+      dir="$1"
     fi
 		docker-compose run --rm -it \
 		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-		  "$1" \
+		  php \
 		  vendor/bin/phpcs --standard=vendor/movisio/nais-cs/config/ruleset.xml ${dir} -v
 }
 
@@ -221,8 +221,8 @@ function compose_code_sniffer {
 function phinx_compose {
   docker-compose run --rm -it \
       --user=$(id -u):$(id -g) \
-		  "$1" \
-		  php ./phinx.php "${@:2}"
+		  php \
+		  php ./phinx.php "${@:1}"
 }
 
 #=========================
@@ -327,10 +327,10 @@ case $1 in
 	echo "update <stack>              aktualizuje image ve stacku"
 	echo "bash <container_name>       prejde do shellu (bash) v kontejneru"
 	echo "sh <container_name>         prejde do shellu (sh) v kontejneru"
-	echo "c <service> <cmd>           spusti php composer.phar <cmd>, composer.json"
-	echo "cl <service> <cmd>          spusti php composer.phar <cmd>, composer.local.json"
-	echo "cs <service> <adresar>      spusti phpcs bud v aktualnim adresari  nebo v <adresar>, kontejner dle docker-compose.yml."
-	echo "phinx <service> <command>   spusti phinx v kontejneru dle docker-compose.yml, napr 'doker phinx migrate' nebo 'doker phinx create Migration Module'"
+	echo "c <cmd>                     spusti php composer.phar <cmd>, composer.json v docker-compose service php"
+	echo "cl <cmd>                    spusti php composer.phar <cmd>, composer.local.json v docker-compose service php"
+	echo "cs <adresar>                spusti phpcs bud v aktualnim adresari  nebo v <adresar>, service php dle docker-compose.yml"
+	echo "phinx <command>             spusti phinx v service php dle docker-compose.yml, napr 'doker phinx migrate' nebo 'doker phinx create Migration Module'"
 	echo "npm <command>               spusti NPM, napr. 'doker npm install' nebo 'doker npm run dev'"
 	echo "cb <command>                prejde do shellu (bash) podle docker-compose.yml"
   echo "csh <command>               prejde do shellu (sh) podle docker-compose.yml"
