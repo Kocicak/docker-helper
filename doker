@@ -100,34 +100,11 @@ function internal_update_stack {
 #=========================
 # vyhledat bezici kontejner
 # pokud nenajde, exit 1.
-# $1 nazev nebo jeho cast
-#=========================
-function search_container {
-	local out="$(docker ps -f name=$1 -q)"
-	echo ${out}
-}
-
-#=========================
-# vyhledat bezici kontejner
-# pokud nenajde, exit 1.
 # $1 nazev image
 #=========================
 function search_image {
   local out="$(docker images -q $1)"
 	echo ${out}
-}
-
-#=========================
-# validuje promennou
-# jestli ne, tak exit 1.
-# $1 - id kontejneru
-# $2 - nazev kontejneru
-#=========================
-function validate_container {
-	if [ -z "$1" ]; then
-		echo "zadnej kontejner s nazvem \"$2\" nebezi"
-		exit 1
-	fi
 }
 
 #=========================
@@ -145,14 +122,11 @@ function get_container_name {
 #=========================
 function shell_into {
 	if [ -z "$1" ]; then
-		echo "Zadej aspon cast nazvu kontejneru"
+		echo "Zadej nazev kontejneru"
 		exit 1
 	fi
-	local cid="$(search_container $1)"
-	validate_container "${cid}" "$1"
-	local name="$(docker inspect $cid -f {{.Name}})"
 	echo "jdu do kontejneru ${name}"
-	docker exec -it ${cid} $2
+	docker exec -it $1 $2
 }
 
 #=========================

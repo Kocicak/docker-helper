@@ -20,7 +20,7 @@ class AdminerFloatThead {
 			echo '<script'.nonce().' src="'.h($this->pathToJquery).'"></script>';
 		}
 		echo '<script'.nonce().' src="'.h($this->pathToFloatThead).'"></script>';
-		echo '<script'.nonce().'>$(document).ready(function() { $(\'#content table\').first().floatThead(); });</script>';
+		echo '<script'.nonce().'>$(document).ready(function() { $(\'#content #table\').first().floatThead(); });</script>';
 		echo '<style type="text/css">.floatThead-container { overflow: visible !important; }</style>';
 	}
 }
