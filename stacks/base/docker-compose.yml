@@ -2,12 +2,12 @@ version: '3.9'
 
 services:
   traefik: # localhost service that automatically proxy to docker containers
-    image: traefik:v2.9
+    image: traefik:v2.10
     container_name: traefik
     ports:
-      - "8080:8080"
-      - "80:80"
-      - "443:443"
+#      - "8080:8080" # control panel
+      - "0.0.0.0:80:80" # http, ipv4
+      - "0.0.0.0:443:443" # https, ipv4
     volumes:
       - $PWD/traefik.yml:/etc/traefik/traefik.yml
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -29,7 +29,6 @@ services:
       - ./adminer/display-foreign-key-name.php:/var/www/html/plugins/display-foreign-key-name.php
       - ./adminer/edit-calendar.php:/var/www/html/plugins/edit-calendar.php
       - ./adminer/restore-menu-scroll.php:/var/www/html/plugins/restore-menu-scroll.php
-      # float thead wrapper, already enabled
       - ./adminer/AdminerFloatTheadWrapper.php:/var/www/html/plugins-enabled/AdminerFloatTheadWrapper.php
       # custom style
       - ./adminer/adminer.css:/var/www/html/adminer.css
@@ -37,7 +36,7 @@ services:
       traefik.http.routers.adminer.rule: Host("adminer.localhost")
 
   mysql: # Shared DB container
-    image: mariadb:10.10
+    image: mariadb:10.11
     container_name: mysql
     environment:
       - TZ=Europe/Prague

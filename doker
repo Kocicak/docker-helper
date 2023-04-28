@@ -182,10 +182,10 @@ function compose_code_sniffer {
     else
       dir="$1"
     fi
-		docker-compose run --rm -it \
+		docker compose run --rm -it \
 		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
 		  php \
-		  vendor/bin/phpcs --standard=vendor/movisio/nais-cs/config/ruleset.xml ${dir} -v
+		  vendor/bin/phpcs --standard=vendor/movisio/nais-cs/config/ruleset.xml ${dir} -v ${@:2}
 }
 
 #=========================
@@ -193,7 +193,7 @@ function compose_code_sniffer {
 # $1 - nazev service z docker-compose.yml
 #=========================
 function phinx_compose {
-  docker-compose run --rm -it \
+  docker compose run --rm -it \
       --user=$(id -u):$(id -g) \
 		  php \
 		  php ./phinx.php "${@:1}"
@@ -209,7 +209,7 @@ function npm {
 		  -v "$PWD":/app \
 		  -w="/app" \
 		  --network=dev \
-		  node:16 \
+		  node:18 \
 		  npm "$@"
 }
 

@@ -53,7 +53,7 @@ class AdminerDisplayForeignKeyName
                 $where = array();
                 foreach( $params['where'] as $param )
                 {
-                   $where[] = join(' ', $param );
+                    $where[] = escape_key($param['col']) . ' ' . $param['op'] . ' ' . q($param['val']);
                 }
                 
                 // Find the first char/varchar field to display
