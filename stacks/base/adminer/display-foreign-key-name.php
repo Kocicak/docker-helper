@@ -69,7 +69,7 @@ class AdminerDisplayForeignKeyName
                 
                 if( false !== $fieldName )
                 {
-                    $query  = sprintf('SELECT %s FROM %s WHERE %s LIMIT 1', $fieldName, $params['select'], join(' AND ', $where ) );
+                    $query  = sprintf('SELECT %s FROM %s WHERE %s LIMIT 1', idf_escape($fieldName), idf_escape($params['select']), join(' AND ', $where ) );
                     
                     $return = self::_getCache( md5( $query ) );
                     if( false === $return )
