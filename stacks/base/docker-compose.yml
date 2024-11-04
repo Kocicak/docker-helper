@@ -1,20 +1,19 @@
-version: '3.9'
-
 services:
-  traefik: # localhost service that automatically proxy to docker containers
-    image: traefik:v2.10
-    container_name: traefik
+  caddy:
+    image: lucaslorentz/caddy-docker-proxy:alpine
+    container_name: caddy_proxy
     ports:
-#      - "8080:8080" # control panel
-      - "0.0.0.0:80:80" # http, ipv4
-      - "0.0.0.0:443:443" # https, ipv4
+      - 80:80
+      - 443:443
+    environment:
+      - CADDY_INGRESS_NETWORKS=dev
     volumes:
-      - $PWD/traefik.yml:/etc/traefik/traefik.yml
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/user/1000/docker.sock:/var/run/docker.sock
+      - ./caddy_data:/data
 
   adminer:
     image: adminer:latest
-#    build: ./dockerfiles/adminer
+    #    build: ./dockerfiles/adminer
     container_name: adminer
     environment:
       - TZ=Europe/Prague
@@ -33,7 +32,8 @@ services:
       # custom style
       - ./adminer/adminer.css:/var/www/html/adminer.css
     labels:
-      traefik.http.routers.adminer.rule: Host("adminer.localhost")
+      caddy: adminer.localhost
+      caddy.reverse_proxy: "{{upstreams 8080}}"
 
   mysql: # Shared DB container
     image: mariadb:10.11
@@ -52,10 +52,9 @@ services:
     environment:
       - TZ=Europe/Prague
     labels:
-      traefik.http.routers.mailhog.rule: Host(`mailhog.localhost`)
-      traefik.http.services.mailhog.loadbalancer.server.port: 8025
+      caddy: mailhog.localhost
+      caddy.reverse_proxy: "{{upstreams 8025}}"
 
-  # lze sledovat trafic přes - redis-cli -p 6380 monitor (instalace redis-cli)
   redis:
     image: redis:alpine
     container_name: redis
@@ -72,12 +71,12 @@ services:
       - ADMIN_PASS=admin
       - REDIS_1_HOST=redis
       - REDIS_1_PORT=6379
-    links:
-      - redis
     labels:
-      traefik.http.routers.phpredisadmin.rule: Host("redisadmin.localhost")
+      caddy: redisadmin.localhost
+      caddy.reverse_proxy: "{{upstreams 80}}"
 
 networks:
   default:
     name: dev
     external: true
+
