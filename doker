@@ -163,7 +163,7 @@ function compose_composer {
   docker compose run --rm \
 		  -v "$PWD":/var/www/html \
 		  -v /dev/null:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
-		  -v $HOME/.composer:/var/www/html/.composer \
+		  -v $HOME/.composer:/.composer \
 		  --user=$(id -u):$(id -g) \
 		  -e COMPOSER=${composerFile} \
 		  --use-aliases \
