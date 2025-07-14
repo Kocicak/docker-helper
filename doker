@@ -209,7 +209,7 @@ function npm {
 		  -v "$PWD":/app \
 		  -w="/app" \
 		  --network=dev \
-		  node:18 \
+		  node:22 \
 		  npm "$@"
 }
 

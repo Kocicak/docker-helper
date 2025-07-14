@@ -17,23 +17,19 @@ services:
     container_name: adminer
     environment:
       - TZ=Europe/Prague
-      - ADMINER_PLUGINS=dump-date edit-foreign edit-calendar edit-textarea enum-option json-column display-foreign-key-name FasterTablesFilter restore-menu-scroll
+      - ADMINER_PLUGINS=dump-date display-foreign-key-name tables-filter floatThead
       - ADMINER_DEFAULT_SERVER=mysql
     volumes:
-      # jQuery
-      - ./adminer/jquery:/var/www/html/plugins/jquery
       # plugins to enable
-      - ./adminer/FasterTablesFilter.php:/var/www/html/plugins/FasterTablesFilter.php
       - ./adminer/floatThead.php:/var/www/html/plugins/floatThead.php
       - ./adminer/display-foreign-key-name.php:/var/www/html/plugins/display-foreign-key-name.php
-      - ./adminer/edit-calendar.php:/var/www/html/plugins/edit-calendar.php
-      - ./adminer/restore-menu-scroll.php:/var/www/html/plugins/restore-menu-scroll.php
-      - ./adminer/AdminerFloatTheadWrapper.php:/var/www/html/plugins-enabled/AdminerFloatTheadWrapper.php
+      - ./adminer/tables-filter.php:/var/www/html/plugins/tables-filter.php
       # custom style
       - ./adminer/adminer.css:/var/www/html/adminer.css
     labels:
       caddy: http://adminer.localhost
       caddy.reverse_proxy: "{{upstreams 8080}}"
+    
 
   mysql: # Shared DB container
     image: mariadb:11.4
