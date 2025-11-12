@@ -32,8 +32,8 @@ services:
     
 
   mysql: # Shared DB container
-    image: mariadb:11.4
-    container_name: mysql
+    image: mariadb:11.8
+    container_name: common-mysql
     environment:
       - TZ=Europe/Prague
       - MYSQL_ROOT_PASSWORD
@@ -52,9 +52,9 @@ services:
       caddy: http://mailhog.localhost
       caddy.reverse_proxy: "{{upstreams 8025}}"
 
-  redis:
-    image: redis:alpine
-    container_name: redis
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: common-redis
     environment:
       - TZ=Europe/Prague
     ports:
@@ -64,10 +64,12 @@ services:
     image: erikdubbelboer/phpredisadmin:latest
     container_name: redisadmin
     environment:
-      - ADMIN_USER=admin
-      - ADMIN_PASS=admin
-      - REDIS_1_HOST=redis
+      - REDIS_1_HOST=common-redis
       - REDIS_1_PORT=6379
+#      - REDIS_2_HOST=ccl-redis
+#      - REDIS_2_PORT=6379
+#      - REDIS_3_HOST=ccw-redis
+#      - REDIS_3_PORT=6379
     labels:
       caddy: http://redisadmin.localhost
       caddy.reverse_proxy: "{{upstreams 80}}"
